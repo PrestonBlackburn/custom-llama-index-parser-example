@@ -1,4 +1,5 @@
 """Custom Markdown node parser."""
+
 from typing import Any, Dict, List, Optional, Sequence
 import logging
 
@@ -12,6 +13,7 @@ from llama_index.core.utils import get_tqdm_iterable
 _logger = logging.getLogger(__name__)
 
 # Uses TextNode and BaseNode
+
 
 class HeadingMarkdownNodeParser(NodeParser):
     """Custom Markdown node parser.
@@ -58,9 +60,10 @@ class HeadingMarkdownNodeParser(NodeParser):
             all_nodes.extend(nodes)
 
         return all_nodes
-    
-    
-    def _headings_processor(self, segments:list, headings:list, current_heading:str, level:int ) -> List[str]:
+
+    def _headings_processor(
+        self, segments: list, headings: list, current_heading: str, level: int
+    ) -> List[str]:
         # add back the headings if they were split on
 
         splits = []
@@ -68,8 +71,11 @@ class HeadingMarkdownNodeParser(NodeParser):
         heading_level = level + 1
 
         for segment in segments:
-            segment_has_parent = [segment.startswith(parent_heading) for parent_heading in headings[0:heading_level]]
-        
+            segment_has_parent = [
+                segment.startswith(parent_heading)
+                for parent_heading in headings[0:heading_level]
+            ]
+
             if True in segment_has_parent:
                 for parent_heading in headings[0:heading_level]:
                     if segment.startswith(parent_heading):
@@ -79,66 +85,72 @@ class HeadingMarkdownNodeParser(NodeParser):
                 splits.append(current_heading + segment)
 
         return splits
-    
-   
-    def _document_splitter(self,
-                        heading: str, 
-                        document: list, 
-                        heading_level: int,
-                        headings:list = ["\n# ", "\n## ", "\n### ", "\n#### "]
-                        ) -> List[str]:
+
+    def _document_splitter(
+        self,
+        heading: str,
+        document: list,
+        heading_level: int,
+        headings: list = ["\n# ", "\n## ", "\n### ", "\n#### "],
+    ) -> List[str]:
         documents = []
         split_docs = []
-        
+
         for doc in document:
-            
+
             if heading not in doc:
                 # If the heading is not at the current level, then don't process the doc
                 _logger.debug(f"skipping doc {doc[0:100]}")
                 split_docs.append(doc)
-                
+
             else:
                 _logger.debug(f"processing doc:  {doc[0:100]}")
                 segments = doc.split(heading)
-    
+
                 # if the heading doesn't start with a previous heading then add current heading
-                splits = self._headings_processor(segments, headings, heading, heading_level)
-                    
+                splits = self._headings_processor(
+                    segments, headings, heading, heading_level
+                )
+
                 split_docs.extend(splits)
-                
+
             documents.extend(split_docs)
             split_docs = []
-        
-        return documents
-                    
 
-    def _split_on_heading(self, document:str, heading_level:int = 2) -> List[str]:
+        return documents
+
+    def _split_on_heading(self, document: str, heading_level: int = 2) -> List[str]:
         split_headings = []
         document = [document]
-            
+
         for i in range(heading_level):
-            split_on = "\n" + "#" * (i+1) + " "
+            split_on = "\n" + "#" * (i + 1) + " "
             split_headings.append(split_on)
-        
+
         for current_level, heading in enumerate(split_headings):
             _logger.debug(f"splitting on: {heading}")
-            
+
             document = self._document_splitter(heading, document, current_level)
-        
+
         return document
 
-
-    def _get_heading_text(self, heading_sections:list, heading_level:int=2) -> List[tuple]:
+    def _get_heading_text(
+        self, heading_sections: list, heading_level: int = 2
+    ) -> List[tuple]:
         """Get heading text as metadata. Track parent heading names"""
 
         # get the different heading prefixes we need
-        heading_level_text = ["#"*heading+" " for heading in range(1, heading_level+1)]
-        heading_level_start = ["\n"+str(heading) for heading in heading_level_text]
-        heading_level_h_tag = ["h"+str(heading) for heading in range(1, heading_level+1)]
+        heading_level_text = [
+            "#" * heading + " " for heading in range(1, heading_level + 1)
+        ]
+        heading_level_start = ["\n" + str(heading) for heading in heading_level_text]
+        heading_level_h_tag = [
+            "Header " + str(heading) for heading in range(1, heading_level + 1)
+        ]
 
         # initialize metadata
         metadata = {heading_level_h_tag[i]: None for i in range(heading_level)}
-        
+
         heading_w_metadata = []
         last_max = 0
         current_max = 0
@@ -158,28 +170,24 @@ class HeadingMarkdownNodeParser(NodeParser):
                     continue
 
             heading_w_metadata.append((heading, metadata.copy()))
-            
+
             last_max = current_max
 
         return heading_w_metadata
-
 
     def get_nodes_from_node(self, node: BaseNode, **kwargs) -> List[TextNode]:
         """Get Nodes from document basedon headers"""
         text = node.get_content(metadata_mode=MetadataMode.NONE)
         markdown_nodes = []
-        
+
         # heading level can get passed as kwargs
         headings = self._split_on_heading(text, **kwargs)
         headings_w_metadata = self._get_heading_text(headings, **kwargs)
 
         for heading, metadata in headings_w_metadata:
-            markdown_nodes.append(
-                self._build_node_from_split(heading, node, metadata)
-            )
-        
-        return markdown_nodes
+            markdown_nodes.append(self._build_node_from_split(heading, node, metadata))
 
+        return markdown_nodes
 
     def _build_node_from_split(
         self,
@@ -195,7 +203,8 @@ class HeadingMarkdownNodeParser(NodeParser):
             node.metadata = {**node.metadata, **metadata}
 
         return node
-    
+
+
 if __name__ == "__main__":
 
     from llama_index.readers.file import FlatReader
@@ -206,15 +215,10 @@ if __name__ == "__main__":
     print(md_docs)
     print(len(md_docs))
 
-
     parser = HeadingMarkdownNodeParser()
-    nodes = parser.get_nodes_from_documents(md_docs, heading_level = 2)
+    nodes = parser.get_nodes_from_documents(md_docs, heading_level=2)
 
     print(nodes)
     print(len(nodes))
 
     assert len(nodes) == 5
-    
-
-
-
