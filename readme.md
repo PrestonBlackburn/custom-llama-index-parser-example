@@ -8,11 +8,6 @@ splitters vs parsers -
 Some splitters inherit from the NodeParser base class, and the other parsers inherit from the NodeParser as well. Seem to be a little more ad-hoc with naming (parser vs splitter)
 
 
-
-
-
-
-
 Custom Docs -> Custom Transforms (to nodes) -> Load Nodes to Index  
  
 Custom Splitting: Then the text splitter gets passed into the node parser, which also gets passed into service context  
@@ -29,3 +24,12 @@ Splitters can be wrapped by node parser
 1. Read Docs / create Documents
 2. Split objects + create nodes (transforms)
 3. Load vector index
+
+
+
+
+# Testing
+
+```python
+python -m pytest
+```
