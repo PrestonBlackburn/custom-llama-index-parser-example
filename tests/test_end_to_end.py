@@ -16,7 +16,7 @@ def documents():
     return documents
 
 
-def test_end_to_end(documents):
+def test_custom_parser(documents):
 
     parser = HeadingMarkdownNodeParser()
     nodes = parser.get_nodes_from_documents(documents, heading_level=2)

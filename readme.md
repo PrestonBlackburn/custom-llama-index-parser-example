@@ -4,32 +4,23 @@ We want to split a markdown file on h1 and h2 tags and provide relevant metadata
 
 *Note that Llama index does provide a couple Markdown parsers may fit your use case.*
 
-splitters vs parsers -
-Some splitters inherit from the NodeParser base class, and the other parsers inherit from the NodeParser as well. Seem to be a little more ad-hoc with naming (parser vs splitter)
+#### splitters vs parsers
+Effectively we can think of these as mostly the same thing. Both implment a `get_nodes_from_documents()` that will return a list of nodes. They eventually inherit from the `NodeParser` classes, but the splitters seem to have intermediate text splitter classes to handle more complex logic. As far as I can tell that is the main difference.    
+
+- **Node Parsers** - These class inherit from the `NodeParser` class. Node parsers are the default for most files.
+- **Splitters** - These classes inherit from `MetadataAwareTextSplitter` which inherits from `TextSplitter` class and finally `NodeParser`. The additional logic appears to try and split text in a more logical manner than the standard node parsers. 
+
+### Basic Llama index flow
+1. Read data to create "documents". Llama index referes to the source data before processing as documents, but we can imediately read the documents as nodes.  
+2. Process nodes with a NodeParser or Splitter. This is where the main processing logic will be handled to create a new list of processed nodes.  
+3. Now we can create a vector store index from the parsed nodes we created.  
+4. The vector store index can then be used for RAG queries.  
+
+To see an example of the custom node parser being used end to end, check out the `tests/test_end_to_end.py` file.
 
 
-Custom Docs -> Custom Transforms (to nodes) -> Load Nodes to Index  
- 
-Custom Splitting: Then the text splitter gets passed into the node parser, which also gets passed into service context  
-Custom Transforms: A transformation is something that takes a list of nodes as an input, and returns a list of nodes.
-
-NodeParser: Node parsers are a simple abstraction that take a list of documents, and chunk them into Node objects  
-
-Splitters can be wrapped by node parser
-
-
-
-
-### Llama index flow:
-1. Read Docs / create Documents
-2. Split objects + create nodes (transforms)
-3. Load vector index
-
-
-
-
-# Testing
-
+### Testing
+Example running with pytest
 ```python
 python -m pytest
 ```
